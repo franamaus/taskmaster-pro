@@ -13,6 +13,8 @@ var createTask = function(taskText, taskDate, taskList) {
   // append span and p element to parent li
   taskLi.append(taskSpan, taskP);
 
+  // check due date
+  auditTask(taskLi);
 
   // append to ul list on the page
   $("#list-" + taskList).append(taskLi);
@@ -79,8 +81,9 @@ $(".list-group").on("blur", "textarea", function() {
   var index = $(this)
   .closest(".list-group-item")
   .index();
-  tasks[status][index].text = text;
-  debugger;
+  console.log(tasks, index, status);
+  tasks[status][index -1].text = text;
+  console.log(text);
   saveTasks();
 
   // recreate p element
@@ -140,7 +143,7 @@ $(".list-group").on("change", "input[type='text']", function() {
     .index();
 
   // update task in array and re-save to localstorage
-  tasks[status][index].date = date;
+  tasks[status][index -1].date = date;
   saveTasks();
 
   // recreate span element with bootstrap classes
@@ -150,6 +153,9 @@ $(".list-group").on("change", "input[type='text']", function() {
 
   // replace input with span element
   $(this).replaceWith(taskSpan);
+
+  // Pass task's <li> element into auditTask() to check new due date
+  auditTask($(taskSpan).closest(".list-group-item"));
 });
 
 // modal was triggered
@@ -167,7 +173,7 @@ $("#task-form-modal").on("shown.bs.modal", function() {
 // save button in modal was clicked
 $("#task-form-modal .btn-primary").click(function() {
   // get form values
-  var taskText = $("#modalTaskDescription").val();
+  var taskText = $("#modalTaskDescription").val().trim();
   var taskDate = $("#modalDueDate").val();
 
   if (taskText && taskDate) {
@@ -230,10 +236,12 @@ $(".card .list-group").sortable({
         .trim();
     
       // add task data to the temp array as an object
-      tempArr.push({
-        text: text,
-        date: date
-      });
+      if(text && date){
+        tempArr.push({
+          text: text,
+          date: date
+        });
+      }     
     });
     
     // trim down list's ID to match object property
@@ -266,6 +274,26 @@ $("#trash").droppable({
 $("#modalDueDate").datepicker({
   minDate: 0
 });
+
+// adding due date audit
+var auditTask = function(taskEl) {
+  // get date from task element
+  var date = $(taskEl).find("span").text().trim();
+
+  // convert to moment object at 5:00pm
+  var time = moment(date, "L").set("hour", 17);
+
+  // remove any old classes from element
+  $(taskEl).removeClass("list-group-item-warning list-group-item-danger");
+
+  // apply new class if task is near/over due date
+  if (moment().isAfter(time)) {
+    $(taskEl).addClass("list-group-item-danger");
+  }
+  else if (Math.abs(moment().diff(time, "days")) <= 2) {
+    $(taskEl).addClass("list-group-item-warning");
+  }
+};
 
 // load tasks for the first time
 loadTasks();
