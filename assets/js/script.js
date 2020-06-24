@@ -286,16 +286,24 @@ var auditTask = function(taskEl) {
   // remove any old classes from element
   $(taskEl).removeClass("list-group-item-warning list-group-item-danger");
 
-  // apply new class if task is near/over due date
+  // apply new class if task is over due date
   if (moment().isAfter(time)) {
     $(taskEl).addClass("list-group-item-danger");
   }
+  // apply new class if task is 2 days near due date
   else if (Math.abs(moment().diff(time, "days")) <= 2) {
     $(taskEl).addClass("list-group-item-warning");
   }
+  console.log(taskEl);
 };
+
 
 // load tasks for the first time
 loadTasks();
 
-
+setInterval(function() {
+  $(".card .list-group-item").each(function (el) {
+    auditTask(el);
+    console.log(auditTask);
+  });
+}, 5000);
